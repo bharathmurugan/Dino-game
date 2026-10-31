@@ -7,9 +7,13 @@ PAGE = r"""
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<<<<<<< HEAD
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#1d0f4a">
 <meta name="apple-mobile-web-app-capable" content="yes">
+=======
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
 <title>Dino Run — Cinematic 3D Edition</title>
 <style>
   :root {
@@ -20,14 +24,21 @@ PAGE = r"""
     --neon: #ff7a3d;
     --ground: #e7e2d6;
   }
+<<<<<<< HEAD
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+=======
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
   html, body {
     height: 100%;
     background: #05040c;
     color: #eee;
     font-family: "Segoe UI", system-ui, sans-serif;
     overflow: hidden;
+<<<<<<< HEAD
     touch-action: manipulation;
+=======
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
   }
 
   /* ---------- POWER-OFF INTRO ---------- */
@@ -64,7 +75,10 @@ PAGE = r"""
     background: radial-gradient(ellipse at center, rgba(10,6,30,0.85), rgba(0,0,0,0.97));
     backdrop-filter: blur(4px);
     perspective: 1200px;
+<<<<<<< HEAD
     padding: 16px;
+=======
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
   }
   #popup.show { display: flex; animation: fadeUp 0.8s ease-out both; }
   @keyframes fadeUp {
@@ -99,7 +113,10 @@ PAGE = r"""
     transition: transform .15s ease, box-shadow .15s ease;
   }
   .btn:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 12px 40px rgba(255,122,61,0.6), inset 0 -3px 0 rgba(0,0,0,0.2); }
+<<<<<<< HEAD
   .btn:active { transform: scale(0.97); }
+=======
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
   .hint { margin-top: 18px; font-size: 13px; color: #8d86ad; }
 
   /* ---------- GAME SCENE ---------- */
@@ -111,9 +128,12 @@ PAGE = r"""
     display: none; flex-direction: column; align-items: center; justify-content: center;
     perspective: 1100px;
     overflow: hidden;
+<<<<<<< HEAD
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+=======
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
   }
   #scene.show { display: flex; animation: fadeIn 1s ease both; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -137,7 +157,10 @@ PAGE = r"""
     animation: sunFloat 9s ease-in-out infinite;
     transform-style: preserve-3d;
     z-index: 0;
+<<<<<<< HEAD
     pointer-events: none;
+=======
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
   }
   .sun3d::after {
     content: ""; position: absolute; inset: 0;
@@ -185,7 +208,10 @@ PAGE = r"""
     font-family: "Courier New", monospace; font-size: 18px; letter-spacing: 2px;
     color: var(--accent); text-shadow: 0 0 10px rgba(255,209,102,.6);
     z-index: 5;
+<<<<<<< HEAD
     pointer-events: none;
+=======
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
   }
 
   #gameOver {
@@ -212,7 +238,10 @@ PAGE = r"""
   .controls-hint {
     margin-top: 14px; font-size: 13px; color: #a79fcb; letter-spacing: 1px; z-index: 2;
     text-shadow: 0 0 8px rgba(0,0,0,0.6);
+<<<<<<< HEAD
     pointer-events: none;
+=======
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
   }
   .exit {
     position: absolute; bottom: 16px; right: 20px; z-index: 6;
@@ -220,6 +249,7 @@ PAGE = r"""
     padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px;
   }
   .exit:hover { color: #fff; border-color: #fff; }
+<<<<<<< HEAD
 
   /* Pause button: only shown on touch screens */
   #pauseBtn {
@@ -245,6 +275,8 @@ PAGE = r"""
     #gameOver h2 { letter-spacing: 3px; }
     #pauseBtn { display: block; }
   }
+=======
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
 </style>
 </head>
 <body>
@@ -260,7 +292,11 @@ PAGE = r"""
     <h1>DINO RUN</h1>
     <p>Power failed. Survive the neon desert. Jump the cacti, duck the pterodactyls, and beat your best run.</p>
     <button class="btn" id="startBtn">START RUN</button>
+<<<<<<< HEAD
     <div class="hint" id="popupHint">SPACE / ↑ to jump &nbsp;·&nbsp; ↓ to duck &nbsp;·&nbsp; P to pause</div>
+=======
+    <div class="hint">SPACE / ↑ to jump &nbsp;·&nbsp; ↓ to duck &nbsp;·&nbsp; P to pause</div>
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
   </div>
 </div>
 
@@ -283,13 +319,19 @@ PAGE = r"""
       <button class="btn" id="restartBtn">RUN AGAIN</button>
     </div>
   </div>
+<<<<<<< HEAD
   <div class="controls-hint" id="controlsHint">SPACE / ↑ jump &nbsp;·&nbsp; ↓ duck &nbsp;·&nbsp; P pause &nbsp;·&nbsp; move mouse for 3D tilt</div>
   <button class="exit" id="exitBtn">EXIT</button>
   <button id="pauseBtn" aria-label="Pause">❚❚</button>
+=======
+  <div class="controls-hint">SPACE / ↑ jump &nbsp;·&nbsp; ↓ duck &nbsp;·&nbsp; P pause &nbsp;·&nbsp; move mouse for 3D tilt</div>
+  <button class="exit" id="exitBtn">EXIT</button>
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
   <div id="flash"></div>
 </div>
 
 <script>
+<<<<<<< HEAD
 // ---------- Touch device detection ----------
 const IS_TOUCH = window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
 if (IS_TOUCH) {
@@ -297,6 +339,8 @@ if (IS_TOUCH) {
   document.getElementById("controlsHint").textContent = "TAP jump · SWIPE DOWN duck · ❚❚ pause";
 }
 
+=======
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
 // ---------- Starfield ----------
 (function makeStars() {
   const box = document.getElementById("stars");
@@ -331,7 +375,10 @@ const scoreEl = document.getElementById("score");
 const hiEl = document.getElementById("hi");
 const finalScoreEl = document.getElementById("finalScore");
 const flashEl = document.getElementById("flash");
+<<<<<<< HEAD
 const pauseBtn = document.getElementById("pauseBtn");
+=======
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
 
 // ---------- Canvas sizing ----------
 let W, H, GROUND;
@@ -354,17 +401,24 @@ hiEl.textContent = String(hi).padStart(5, "0");
 function resetGame() {
   state = { x: 70, y: 0, vy: 0, onGround: true, ducking: false, legPhase: 0, blink: 0 };
   obstacles = []; clouds = []; particles = [];
+<<<<<<< HEAD
   speed = 6; frame = 0; score = 0; shake = 0;
   setPaused(false);
+=======
+  speed = 6; frame = 0; score = 0; paused = false; shake = 0;
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
   gameOverEl.classList.remove("show");
   scoreEl.textContent = "00000";
 }
 
+<<<<<<< HEAD
 function setPaused(value) {
   paused = value;
   pauseBtn.textContent = paused ? "▶" : "❚❚";
 }
 
+=======
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
 // ---------- Spawning ----------
 function spawnObstacle() {
   const r = Math.random();
@@ -783,7 +837,11 @@ function endGame(hx, hy) {
   settle();
 }
 
+<<<<<<< HEAD
 // ---------- Input (keyboard) ----------
+=======
+// ---------- Input ----------
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
 function jump() {
   if (!running || paused) return;
   if (state.onGround && !state.ducking) {
@@ -806,13 +864,18 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     setDuck(true);
   } else if (e.code === "KeyP" && running) {
+<<<<<<< HEAD
     setPaused(!paused);
+=======
+    paused = !paused;
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
   }
 });
 document.addEventListener("keyup", (e) => {
   if (e.code === "ArrowDown") setDuck(false);
 });
 
+<<<<<<< HEAD
 // ---------- Input (touch) ----------
 // Tap = jump, swipe down = duck. Taps on buttons are left alone so they still work.
 let touchStartY = 0, touchDuck = false, touchMoved = false;
@@ -861,6 +924,9 @@ pauseBtn.addEventListener("click", () => {
 });
 
 // ---------- Mouse 3D tilt (desktop only) ----------
+=======
+// ---------- Mouse 3D tilt ----------
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
 scene.addEventListener("mousemove", (e) => {
   const x = e.clientX / window.innerWidth - 0.5;
   const y = e.clientY / window.innerHeight - 0.5;
@@ -894,4 +960,8 @@ def index():
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     app.run(debug=True)
+=======
+    app.run(debug=True)
+>>>>>>> 422db361aa40767a4ac3d7aa002abeed338bb5be
