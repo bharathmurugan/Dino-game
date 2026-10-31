@@ -7,9 +7,10 @@ PAGE = r"""
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#1d0f4a">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Dino Run — Cinematic 3D Edition</title>
 <style>
   :root {
@@ -28,6 +29,8 @@ PAGE = r"""
     font-family: "Segoe UI", system-ui, sans-serif;
     overflow: hidden;
     touch-action: manipulation;
+    overscroll-behavior: none;
+    -webkit-touch-callout: none;
   }
 
   /* ---------- POWER-OFF INTRO ---------- */
@@ -78,6 +81,8 @@ PAGE = r"""
     background: linear-gradient(160deg, rgba(40,20,80,0.6), rgba(10,8,25,0.9));
     box-shadow: 0 0 60px rgba(255,122,61,0.25), 0 30px 60px rgba(0,0,0,0.6);
     max-width: 480px;
+    max-height: 92vh;
+    overflow: auto;
     transform-style: preserve-3d;
     transition: transform .35s ease;
   }
@@ -118,7 +123,15 @@ PAGE = r"""
   #scene.show { display: flex; animation: fadeIn 1s ease both; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-  .stars { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  /* Night tint (opacity set by JS for the day/night cycle) */
+  #nightOverlay {
+    position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background: linear-gradient(to bottom, #02030f 0%, #0b0630 60%, #1a0830 100%);
+    opacity: 0;
+    transition: opacity .6s linear;
+  }
+
+  .stars { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; transition: opacity .6s linear; }
   .star {
     position: absolute; width: 2px; height: 2px; background: #fff; border-radius: 50%;
     animation: twinkle 3s infinite ease-in-out;
@@ -138,6 +151,7 @@ PAGE = r"""
     transform-style: preserve-3d;
     z-index: 0;
     pointer-events: none;
+    transition: opacity .6s linear;
   }
   .sun3d::after {
     content: ""; position: absolute; inset: 0;
@@ -151,7 +165,7 @@ PAGE = r"""
   }
   @keyframes bands { to { transform: translateY(-10px); } }
 
-  /* Game stage: tilts with the mouse in 3D */
+  /* Game stage: tilts with the mouse in 3D (desktop) */
   #gameWrap {
     position: relative; width: min(960px, 95vw); height: min(380px, 58vh);
     z-index: 2;
@@ -188,6 +202,18 @@ PAGE = r"""
     pointer-events: none;
   }
 
+  /* Pause / sound buttons */
+  .tools {
+    position: absolute; top: 60px; right: 16px; z-index: 7;
+    display: flex; gap: 8px;
+  }
+  .tool-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid rgba(255,209,102,0.5);
+    background: rgba(0,0,0,0.35); color: var(--accent);
+    font-size: 16px; cursor: pointer;
+  }
+
   #gameOver {
     position: absolute; inset: 0; display: none;
     align-items: center; justify-content: center; flex-direction: column;
@@ -201,6 +227,22 @@ PAGE = r"""
   }
   #gameOver p { color: #ddd; margin-bottom: 20px; }
 
+  /* Milestone toast */
+  .toast {
+    position: absolute; top: 34%; left: 50%;
+    font-family: "Courier New", monospace; font-weight: bold;
+    font-size: clamp(16px, 3vw, 26px); letter-spacing: 4px;
+    color: var(--accent); text-shadow: 0 0 18px rgba(255,209,102,.8);
+    opacity: 0; pointer-events: none; z-index: 8; white-space: nowrap;
+  }
+  .toast.show { animation: toastAnim 1.6s ease-out both; }
+  @keyframes toastAnim {
+    0%   { opacity: 0; transform: translate(-50%, -40%) scale(0.9); }
+    15%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    80%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -62%) scale(1); }
+  }
+
   #flash {
     position: fixed; inset: 0; pointer-events: none; z-index: 20;
     background: radial-gradient(circle, rgba(255,77,141,0.45), rgba(255,77,141,0) 70%);
@@ -212,7 +254,7 @@ PAGE = r"""
   .controls-hint {
     margin-top: 14px; font-size: 13px; color: #a79fcb; letter-spacing: 1px; z-index: 2;
     text-shadow: 0 0 8px rgba(0,0,0,0.6);
-    pointer-events: none;
+    pointer-events: none; text-align: center;
   }
   .exit {
     position: absolute; bottom: 16px; right: 20px; z-index: 6;
@@ -221,29 +263,36 @@ PAGE = r"""
   }
   .exit:hover { color: #fff; border-color: #fff; }
 
-  /* Pause button: only shown on touch screens */
-  #pauseBtn {
-    display: none;
-    position: absolute; top: 56px; right: 16px; z-index: 7;
-    width: 44px; height: 44px; border-radius: 50%;
-    border: 1px solid rgba(255,209,102,0.5);
-    background: rgba(0,0,0,0.35); color: var(--accent);
-    font-size: 16px; cursor: pointer;
-  }
-
   /* ---------- MOBILE / TOUCH LAYOUT ---------- */
   @media (max-width: 768px), (pointer: coarse) {
     #gameWrap { width: 98vw; height: min(340px, 50vh); }
-    #hud { padding: 0 16px; font-size: 13px; top: 12px; letter-spacing: 1px; }
+    #hud {
+      padding: 0 16px; font-size: 13px; letter-spacing: 1px;
+      top: calc(12px + env(safe-area-inset-top, 0px));
+    }
+    .tools { top: calc(50px + env(safe-area-inset-top, 0px)); right: 12px; }
+    .tool-btn { width: 40px; height: 40px; }
     .sun3d { width: 150px; height: 150px; margin-left: -75px; top: 9%; }
     .card { padding: 26px 22px; }
     .card p { font-size: 14px; }
     .btn { padding: 12px 30px; font-size: 14px; }
     .hint { font-size: 12px; }
-    .controls-hint { font-size: 11px; padding: 0 12px; text-align: center; }
-    .exit { bottom: 10px; right: 10px; padding: 5px 10px; }
+    .controls-hint { font-size: 11px; padding: 0 12px; }
+    .exit {
+      bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+      right: 10px; padding: 5px 10px;
+    }
     #gameOver h2 { letter-spacing: 3px; }
-    #pauseBtn { display: block; }
+  }
+
+  /* Phones in landscape: use most of the short screen height */
+  @media (orientation: landscape) and (max-height: 500px) {
+    #gameWrap { height: 66vh; width: min(96vw, 900px); }
+    .sun3d { display: none; }
+    #hud { top: 8px; }
+    .tools { top: 8px; right: 60px; }
+    .controls-hint { display: none; }
+    .exit { bottom: 6px; }
   }
 </style>
 </head>
@@ -260,18 +309,24 @@ PAGE = r"""
     <h1>DINO RUN</h1>
     <p>Power failed. Survive the neon desert. Jump the cacti, duck the pterodactyls, and beat your best run.</p>
     <button class="btn" id="startBtn">START RUN</button>
-    <div class="hint" id="popupHint">SPACE / ↑ to jump &nbsp;·&nbsp; ↓ to duck &nbsp;·&nbsp; P to pause</div>
+    <div class="hint" id="popupHint">SPACE / ↑ jump &nbsp;·&nbsp; ↓ duck &nbsp;·&nbsp; P pause &nbsp;·&nbsp; M mute</div>
   </div>
 </div>
 
 <!-- Game scene -->
 <div id="scene">
+  <div id="nightOverlay"></div>
   <div class="stars" id="stars"></div>
-  <div class="sun3d"></div>
+  <div class="sun3d" id="sun"></div>
 
   <div id="hud">
     <span>SCORE <span id="score">00000</span></span>
     <span>HI <span id="hi">00000</span></span>
+  </div>
+
+  <div class="tools">
+    <button class="tool-btn" id="pauseBtn" aria-label="Pause">❚❚</button>
+    <button class="tool-btn" id="soundBtn" aria-label="Sound on or off">🔊</button>
   </div>
 
   <div id="gameWrap">
@@ -283,23 +338,35 @@ PAGE = r"""
       <button class="btn" id="restartBtn">RUN AGAIN</button>
     </div>
   </div>
-  <div class="controls-hint" id="controlsHint">SPACE / ↑ jump &nbsp;·&nbsp; ↓ duck &nbsp;·&nbsp; P pause &nbsp;·&nbsp; move mouse for 3D tilt</div>
+
+  <div class="toast" id="toast"></div>
+  <div class="controls-hint" id="controlsHint">SPACE / ↑ jump &nbsp;·&nbsp; ↓ duck &nbsp;·&nbsp; P pause &nbsp;·&nbsp; M mute &nbsp;·&nbsp; move mouse for 3D tilt</div>
   <button class="exit" id="exitBtn">EXIT</button>
-  <button id="pauseBtn" aria-label="Pause">❚❚</button>
   <div id="flash"></div>
 </div>
 
 <script>
-// ---------- Touch device detection ----------
+// ---------- Device detection ----------
 const IS_TOUCH = window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
 if (IS_TOUCH) {
-  document.getElementById("popupHint").textContent = "TAP to jump · SWIPE DOWN to duck · ❚❚ to pause";
-  document.getElementById("controlsHint").textContent = "TAP jump · SWIPE DOWN duck · ❚❚ pause";
+  document.getElementById("popupHint").textContent = "TAP to jump · SWIPE DOWN to duck · ❚❚ pause · 🔊 sound";
+  document.getElementById("controlsHint").textContent = "TAP jump · SWIPE DOWN duck · ❚❚ pause · 🔊 sound";
 }
 
+// ---------- Safe storage (private mode can throw) ----------
+const store = {
+  get(key, fallback) {
+    try { const v = localStorage.getItem(key); return v === null ? fallback : v; }
+    catch (e) { return fallback; }
+  },
+  set(key, value) {
+    try { localStorage.setItem(key, value); } catch (e) {}
+  }
+};
+
 // ---------- Starfield ----------
+const starsEl = document.getElementById("stars");
 (function makeStars() {
-  const box = document.getElementById("stars");
   for (let i = 0; i < 120; i++) {
     const s = document.createElement("div");
     s.className = "star";
@@ -307,7 +374,7 @@ if (IS_TOUCH) {
     s.style.top = Math.random() * 60 + "%";
     s.style.width = s.style.height = (Math.random() < 0.2 ? 3 : 2) + "px";
     s.style.animationDelay = (Math.random() * 3) + "s";
-    box.appendChild(s);
+    starsEl.appendChild(s);
   }
 })();
 
@@ -332,37 +399,101 @@ const hiEl = document.getElementById("hi");
 const finalScoreEl = document.getElementById("finalScore");
 const flashEl = document.getElementById("flash");
 const pauseBtn = document.getElementById("pauseBtn");
+const soundBtn = document.getElementById("soundBtn");
+const sunEl = document.getElementById("sun");
+const nightEl = document.getElementById("nightOverlay");
+const toastEl = document.getElementById("toast");
 
-// ---------- Canvas sizing ----------
-let W, H, GROUND;
+// ---------- Canvas sizing (capped DPR saves battery on phones) ----------
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+let W = 0, H = 0, GROUND = 0;
 function resize() {
   const r = canvas.getBoundingClientRect();
-  canvas.width = r.width * devicePixelRatio;
-  canvas.height = r.height * devicePixelRatio;
-  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  if (!r.width || !r.height) return;   // scene hidden: nothing to size yet
   W = r.width; H = r.height;
   GROUND = H - 40;
+  canvas.width = Math.round(W * DPR);
+  canvas.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
 window.addEventListener("resize", resize);
+window.addEventListener("orientationchange", () => setTimeout(resize, 150));
+if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
 
 // ---------- Constants & state ----------
 const G = 0.65, JUMP_V = -12.5;
-let state, obstacles, clouds, particles, speed, frame, score, paused, running, shake, rafId;
-let hi = parseInt(localStorage.getItem("dino_hi") || "0", 10);
+const STEP = 1000 / 60;   // fixed 60 Hz simulation, so 90/120 Hz phones don't run fast
+let state, obstacles, clouds, particles, speed, frame, score, shake;
+let paused = false, running = false, rafId = 0, lastTs = null, acc = 0;
+let muted = store.get("dino_muted", "0") === "1";
+let hi = parseInt(store.get("dino_hi", "0"), 10) || 0;
 hiEl.textContent = String(hi).padStart(5, "0");
+soundBtn.textContent = muted ? "🔇" : "🔊";
 
 function resetGame() {
   state = { x: 70, y: 0, vy: 0, onGround: true, ducking: false, legPhase: 0, blink: 0 };
   obstacles = []; clouds = []; particles = [];
   speed = 6; frame = 0; score = 0; shake = 0;
+  acc = 0; lastTs = null;
   setPaused(false);
   gameOverEl.classList.remove("show");
   scoreEl.textContent = "00000";
+  updateNight();
 }
 
 function setPaused(value) {
   paused = value;
   pauseBtn.textContent = paused ? "▶" : "❚❚";
+}
+
+// ---------- Day / night cycle ----------
+let night = 0;
+function updateNight() {
+  night = (1 - Math.cos(score / 450)) / 2;   // 0 = dusk, 1 = deep night
+  nightEl.style.opacity = night.toFixed(3);
+  starsEl.style.opacity = (0.35 + 0.65 * night).toFixed(3);
+  sunEl.style.opacity = (1 - 0.55 * night).toFixed(3);
+}
+
+// ---------- Sound (WebAudio, no files needed) ----------
+let audioCtx = null;
+function beep(freq, dur, opts = {}) {
+  if (muted) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = opts.type || "square";
+    osc.frequency.setValueAtTime(freq, t);
+    if (opts.slideTo) osc.frequency.exponentialRampToValueAtTime(opts.slideTo, t + dur);
+    gain.gain.setValueAtTime(opts.vol || 0.06, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + dur);
+  } catch (e) {}
+}
+const sfx = {
+  jump:      () => beep(420, 0.18, { slideTo: 880 }),
+  land:      () => beep(160, 0.08, { type: "triangle", vol: 0.05 }),
+  point:     () => beep(960, 0.09, { type: "sine", vol: 0.04 }),
+  milestone: () => { beep(523, 0.12, { type: "triangle", vol: 0.08 });
+                     setTimeout(() => beep(784, 0.2, { type: "triangle", vol: 0.08 }), 120); },
+  crash:     () => beep(300, 0.5, { type: "sawtooth", slideTo: 40, vol: 0.09 })
+};
+function vibe(pattern) {
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+}
+
+// ---------- Toast ----------
+function toast(text) {
+  toastEl.textContent = text;
+  toastEl.classList.remove("show");
+  void toastEl.offsetWidth;   // restart the animation
+  toastEl.classList.add("show");
 }
 
 // ---------- Spawning ----------
@@ -410,7 +541,6 @@ function dinoBox() {
 }
 
 // ---------- 3D helpers ----------
-// Horizontal cylinder shading: dark edges, lit centre
 function cylinderGrad(x, w, base, light) {
   const g = ctx.createLinearGradient(x, 0, x + w, 0);
   g.addColorStop(0, base);
@@ -420,7 +550,6 @@ function cylinderGrad(x, w, base, light) {
   return g;
 }
 
-// Ground shadow: shrinks and fades as the object rises
 function drawShadow(cx, width, height) {
   const k = Math.max(0.25, 1 - height / 160);
   ctx.save();
@@ -431,7 +560,7 @@ function drawShadow(cx, width, height) {
   ctx.restore();
 }
 
-// ---------- Parallax mountain ridges (depth layers) ----------
+// ---------- Parallax mountain ridges ----------
 function ridge(base, amp, period, factor, seed, color) {
   ctx.fillStyle = color;
   ctx.beginPath();
@@ -454,7 +583,7 @@ function drawMountains() {
   ridge(GROUND, 28, 150, 0.6, 2.1, "rgba(28,14,70,0.95)");
 }
 
-// ---------- Drawing sprites ----------
+// ---------- Sprites ----------
 function drawDino() {
   const b = dinoBox();
   drawShadow(state.x + 22, 40, -state.y);
@@ -475,27 +604,20 @@ function drawDino() {
     ctx.fillStyle = "#0b1030";
     ctx.fillRect(b.x + 48, b.y + 3, 3, 3);
   } else {
-    // body
-    ctx.fillRect(b.x + 8, b.y + 8, 26, 26);
-    // head
-    ctx.fillRect(b.x + 20, b.y, 22, 20);
-    // snout
-    ctx.fillRect(b.x + 34, b.y + 8, 10, 8);
-    // tail
-    ctx.beginPath();
+    ctx.fillRect(b.x + 8, b.y + 8, 26, 26);     // body
+    ctx.fillRect(b.x + 20, b.y, 22, 20);        // head
+    ctx.fillRect(b.x + 34, b.y + 8, 10, 8);     // snout
+    ctx.beginPath();                            // tail
     ctx.moveTo(b.x + 8, b.y + 20);
     ctx.lineTo(b.x, b.y + 14);
     ctx.lineTo(b.x + 8, b.y + 28);
     ctx.fill();
-    // belly highlight (gives volume)
     ctx.shadowBlur = 0;
-    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    ctx.fillStyle = "rgba(255,255,255,0.35)";   // belly highlight
     ctx.fillRect(b.x + 12, b.y + 10, 6, 18);
-    // eye
-    ctx.fillStyle = "#0b1030";
+    ctx.fillStyle = "#0b1030";                  // eye
     if (state.blink <= 0) ctx.fillRect(b.x + 33, b.y + 4, 3, 3);
-    // legs
-    ctx.fillStyle = bodyGrad;
+    ctx.fillStyle = bodyGrad;                   // legs
     ctx.shadowBlur = 14;
     if (state.onGround) {
       const phase = Math.floor(state.legPhase) % 2;
@@ -521,15 +643,12 @@ function drawCactus(o) {
   ctx.shadowBlur = 12;
   for (let i = 0; i < o.count; i++) {
     const cx = o.x + i * 24;
-    // main trunk (cylinder-shaded)
     ctx.fillStyle = cylinderGrad(cx + 6, 6, "#1f8f5a", "#7dffb5");
     ctx.fillRect(cx + 6, o.y, 6, o.h);
-    // left arm
     ctx.fillStyle = cylinderGrad(cx, 6, "#1f8f5a", "#7dffb5");
     ctx.fillRect(cx, o.y + o.h * 0.35, 6, 8);
     ctx.fillStyle = cylinderGrad(cx, 12, "#1f8f5a", "#7dffb5");
     ctx.fillRect(cx, o.y + o.h * 0.35, 12, 4);
-    // right arm
     ctx.fillStyle = cylinderGrad(cx + 12, 6, "#1f8f5a", "#7dffb5");
     ctx.fillRect(cx + 12, o.y + o.h * 0.15, 6, 16);
     ctx.fillStyle = cylinderGrad(cx + 6, 12, "#1f8f5a", "#7dffb5");
@@ -556,7 +675,6 @@ function drawRock(o) {
 }
 
 function drawPtero(o) {
-  o.wing += 0.22;
   const up = Math.sin(o.wing) > 0;
   drawShadow(o.x + 23, 40, GROUND - (o.y + o.h));
   ctx.save();
@@ -567,18 +685,14 @@ function drawPtero(o) {
   ctx.fillStyle = g;
   ctx.shadowColor = "rgba(255,77,141,0.6)";
   ctx.shadowBlur = 14;
-  // body
-  ctx.fillRect(o.x + 10, o.y + 8, 26, 10);
-  // head
-  ctx.fillRect(o.x + 32, o.y + 6, 10, 8);
-  // beak
-  ctx.beginPath();
+  ctx.fillRect(o.x + 10, o.y + 8, 26, 10);      // body
+  ctx.fillRect(o.x + 32, o.y + 6, 10, 8);       // head
+  ctx.beginPath();                              // beak
   ctx.moveTo(o.x + 42, o.y + 9);
   ctx.lineTo(o.x + 50, o.y + 10);
   ctx.lineTo(o.x + 42, o.y + 12);
   ctx.fill();
-  // wing
-  ctx.beginPath();
+  ctx.beginPath();                              // wing
   if (up) {
     ctx.moveTo(o.x + 16, o.y + 8);
     ctx.lineTo(o.x + 22, o.y - 8);
@@ -593,14 +707,12 @@ function drawPtero(o) {
 }
 
 function drawGround() {
-  // Glowing horizon line
   ctx.save();
   ctx.shadowColor = "rgba(255,122,61,0.9)";
   ctx.shadowBlur = 16;
   ctx.fillStyle = "#ff9a5c";
   ctx.fillRect(0, GROUND, W, 2);
   ctx.restore();
-  // Scrolling pebbles
   ctx.fillStyle = "rgba(231,226,214,0.35)";
   for (let i = 0; i < 14; i++) {
     const x = ((i * 97 - frame * speed * 0.5) % W + W) % W;
@@ -651,7 +763,7 @@ function drawParticles() {
   ctx.globalAlpha = 1;
 }
 
-// ---------- Update ----------
+// ---------- Update (runs at fixed 60 steps per second) ----------
 function update() {
   frame++;
   speed = Math.min(6 + score / 300, 16);
@@ -661,7 +773,7 @@ function update() {
     state.vy += G;
     state.y += state.vy;
     if (state.y >= 0) {
-      if (state.vy > 3) burst(state.x + 20, GROUND, "#e7e2d6", 8);
+      if (state.vy > 3) { burst(state.x + 20, GROUND, "#e7e2d6", 8); sfx.land(); }
       state.y = 0; state.vy = 0; state.onGround = true;
     }
   }
@@ -700,9 +812,13 @@ function update() {
     }
   }
 
+  // scoring + milestones
   score++;
-  if (score % 100 === 0) burst(W - 60, 40, "#ffd166", 20);
+  if (score % 100 === 0) { sfx.point(); burst(W - 60, 40, "#ffd166", 20); }
+  if (score % 500 === 0) { sfx.milestone(); vibe(20); toast("★ " + score); }
   scoreEl.textContent = String(score).padStart(5, "0");
+
+  if (frame % 6 === 0) updateNight();
 
   // floor scroll (fake 3D motion)
   floorEl.style.backgroundPositionY = ((frame * speed * 2) % 40) + "px";
@@ -743,12 +859,22 @@ function render() {
   ctx.restore();
 }
 
-// ---------- Loop ----------
-function loop() {
+// ---------- Loop (time-based, so every refresh rate plays at the same speed) ----------
+function loop(ts) {
   if (!running) return;
-  if (!paused) update();
+  if (lastTs === null) lastTs = ts;
+  let dt = ts - lastTs;
+  lastTs = ts;
+  if (dt > 100) dt = 100;               // after a tab switch, don't jump ahead
+  if (!paused) {
+    acc += dt;
+    while (acc >= STEP && running) {
+      update();
+      acc -= STEP;
+    }
+  }
   render();
-  rafId = requestAnimationFrame(loop);
+  if (running) rafId = requestAnimationFrame(loop);
 }
 
 function startGame() {
@@ -763,6 +889,8 @@ function endGame(hx, hy) {
   running = false;
   cancelAnimationFrame(rafId);
   shake = 16;
+  sfx.crash();
+  vibe([60, 40, 120]);
   burst(hx, hy, "#ff4d8d", 26);
   flashEl.classList.remove("hit");
   void flashEl.offsetWidth;
@@ -770,17 +898,30 @@ function endGame(hx, hy) {
 
   if (score > hi) {
     hi = score;
-    localStorage.setItem("dino_hi", String(hi));
+    store.set("dino_hi", String(hi));
     hiEl.textContent = String(hi).padStart(5, "0");
   }
   finalScoreEl.textContent = score;
   gameOverEl.classList.add("show");
-  // keep the crash frame and shake visible for a moment
-  const settle = () => {
-    if (shake > 0) { render(); requestAnimationFrame(settle); }
-    else render();
-  };
   settle();
+}
+
+// Keep shaking the crash frame after the game stops
+function settle() {
+  if (running) return;
+  render();
+  if (shake > 0) requestAnimationFrame(settle);
+}
+
+function togglePause() {
+  if (!running) return;
+  setPaused(!paused);
+}
+
+function toggleMute() {
+  muted = !muted;
+  store.set("dino_muted", muted ? "1" : "0");
+  soundBtn.textContent = muted ? "🔇" : "🔊";
 }
 
 // ---------- Input (keyboard) ----------
@@ -789,6 +930,8 @@ function jump() {
   if (state.onGround && !state.ducking) {
     state.vy = JUMP_V;
     state.onGround = false;
+    sfx.jump();
+    vibe(8);
   }
 }
 function setDuck(on) {
@@ -800,21 +943,32 @@ function setDuck(on) {
 document.addEventListener("keydown", (e) => {
   if (e.code === "Space" || e.code === "ArrowUp") {
     e.preventDefault();
+    if (e.repeat) return;
     if (gameOverEl.classList.contains("show")) { startGame(); return; }
     jump();
   } else if (e.code === "ArrowDown") {
     e.preventDefault();
     setDuck(true);
-  } else if (e.code === "KeyP" && running) {
-    setPaused(!paused);
+  } else if (e.code === "KeyP") {
+    togglePause();
+  } else if (e.code === "KeyM") {
+    toggleMute();
   }
 });
 document.addEventListener("keyup", (e) => {
   if (e.code === "ArrowDown") setDuck(false);
 });
 
+// Pause automatically when the phone locks or the tab is hidden
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && running && !paused) setPaused(true);
+});
+window.addEventListener("blur", () => {
+  if (running && !paused) setPaused(true);
+});
+
 // ---------- Input (touch) ----------
-// Tap = jump, swipe down = duck. Taps on buttons are left alone so they still work.
+// Tap = jump, swipe down = duck. Buttons are left alone so they still work.
 let touchStartY = 0, touchDuck = false, touchMoved = false;
 
 function onTouchStart(e) {
@@ -856,10 +1010,6 @@ scene.addEventListener("touchmove", onTouchMove, { passive: false });
 scene.addEventListener("touchend", onTouchEnd, { passive: false });
 scene.addEventListener("touchcancel", onTouchCancel);
 
-pauseBtn.addEventListener("click", () => {
-  if (running) setPaused(!paused);
-});
-
 // ---------- Mouse 3D tilt (desktop only) ----------
 scene.addEventListener("mousemove", (e) => {
   const x = e.clientX / window.innerWidth - 0.5;
@@ -872,13 +1022,16 @@ scene.addEventListener("mouseleave", () => { gameWrap.style.transform = ""; });
 document.getElementById("startBtn").addEventListener("click", () => {
   popup.classList.remove("show");
   scene.classList.add("show");
-  resize();
   startGame();
 });
 document.getElementById("restartBtn").addEventListener("click", startGame);
+pauseBtn.addEventListener("click", togglePause);
+soundBtn.addEventListener("click", toggleMute);
 document.getElementById("exitBtn").addEventListener("click", () => {
   running = false;
   cancelAnimationFrame(rafId);
+  setPaused(false);
+  gameOverEl.classList.remove("show");
   scene.classList.remove("show");
   popup.classList.add("show");
 });
